@@ -1,9 +1,13 @@
 import Chance from 'chance';
+import * as d3 from 'd3';
 
-const chance = new Chance('test');
+const chance = new Chance();
 
 export const generateMockData = NameList => {
     let mockData = [];
+    let aggDataRow = [];
+    let aggRange = [];
+    let colorRange;
 
     const generateHeaders = NameList => {
         let columnIds = NameList.map(el => chance.hash({length: 10}));
@@ -41,7 +45,6 @@ export const generateMockData = NameList => {
                             return false;
                         }
                     });
-                    console.log(colIds);
                     var filtered = colIds.filter(el => el);
                     filtered.map(el => {
                         total += parseInt(params.data[el]);
@@ -50,11 +53,43 @@ export const generateMockData = NameList => {
                 },
                 editable: false,
                 aggFunc: 'sum',
-                cellClass: 'total-col',
+                cellClass: 'total-col center-text',
                 suppressSizeToFit: true,
                 width: 75,
                 menuTabs: [],
-                field: 'y'
+                field: 'y',
+                cellStyle: params => {
+                    if (params.node.aggData) {
+                        aggDataRow = Object.values(params.node.aggData);
+                        aggDataRow.sort((a, b) => {
+                            return a - b;
+                        });
+                        //aggDataMax = aggData[aggData.length - 1];
+                    }
+                    if (params.node.data && !params.node.aggData) {
+                        if (aggRange.length === 0) {
+                            params.api.forEachNode(node => {
+                                if (!node.aggData) {
+                                    let vals = Object.values(node.data).filter(x => typeof x === 'number');
+                                    const total = vals.reduce((acc, curr) => acc + curr);
+                                    aggRange.push(total);
+                                }
+                            });
+                            aggRange.sort((a, b) => {
+                                return a - b;
+                            });
+                            colorRange = d3
+                                .scaleLinear()
+                                .domain([0, aggRange[aggRange.length - 1]])
+                                .interpolate(d3.interpolateHcl)
+                                .range([d3.rgb('#ff9396'), d3.rgb('#ade795')]);
+                        }
+                        let temp = Object.values(params.node.data);
+                        let vals = temp.filter(x => typeof x === 'number');
+                        let rowTotal = vals.reduce((acc, curr) => acc + curr);
+                        return {backgroundColor: colorRange(rowTotal)};
+                    }
+                }
             }
         ];
         for (var i = 0; i < NameList.length; i++) {
