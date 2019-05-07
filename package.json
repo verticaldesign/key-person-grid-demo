@@ -2,6 +2,7 @@
     "name": "my-app",
     "version": "0.1.0",
     "private": true,
+    "homepage": ".",
     "dependencies": {
         "ag-grid-community": "^20.2.0",
         "ag-grid-enterprise": "^20.2.0",
